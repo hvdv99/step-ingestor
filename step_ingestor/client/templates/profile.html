@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+</head>
+
+<body>
+    <a href="{{url_for('oauth.logout')}}">Logout</a>
+    <br>
+    <a href="{{url_for('index')}}">Home</a>
+    <p>Hi, {{session['user']['user_id']}}!</p>
+    <p>User ID - {{session['user']['user_id']}}</p>
+    <p>Polar User ID - {{session['user']['user_id']}}</p>
+    <p>Access Token - {{session['user']['access_token']}}</p>
+    <br>
+    <p>Session - {{ session }}</p>
+</body>
+
+</html>

@@ -1,0 +1,6 @@
+{
+    "oauthAppClientId": "flaskClient",
+    "oauthAppClientSecret": "",
+    "oauthProviderDiscoveryUrl": "",
+    "flaskSecret": ""
+}

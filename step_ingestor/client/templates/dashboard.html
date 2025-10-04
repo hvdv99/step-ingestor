@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+</head>
+<body>
+    <header>
+            <a href="{{url_for('oauth.logout')}}">Logout</a>
+        {% for name in g.freqs %}
+            <a href="/dashboard/{{name}}">{{name}} view</a>
+        {% endfor %}
+
+    </header>
+
+    {{ g.plot }}
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+name: step-ingestor
+channels:
+  - nodefaults
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - setuptools
+  - conda-libmamba-solver
+  - pip:
+      -e .
