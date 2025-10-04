@@ -28,9 +28,6 @@ class IngestionService:
     def fetch_access_token(self, user_id):
         return self.repo.fetch_access_token(user_id=user_id)
 
-    def retrieve_user_steps(self, user_id):
-        pass
-
     def populate_db_historical(self, access_token, user_id):
         """Stores data from Polar API from last 365 days in DB."""
         ranges = date_windows_28d()

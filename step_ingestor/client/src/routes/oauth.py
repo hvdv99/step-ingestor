@@ -1,26 +1,29 @@
 import os
 import requests
 from datetime import datetime
-from flask import Blueprint, redirect, url_for, current_app, session, abort, g
+from flask import Blueprint, redirect, url_for, current_app, session, abort
 from authlib.integrations.flask_client import OAuth
 
 from step_ingestor.client.src.security.user import create_user_session, clear_user_session
 
+oauth = None
 
-# Create blueprint for user authentication
-oauth_page = Blueprint('oauth', __name__, template_folder='templates')
-
-# setup authlib with flask application
-oauth = OAuth(current_app)
-oauth.register(
-    name='polar',
-    client_id=os.environ["POLAR_CLIENT_ID"],
-    client_secret=os.environ["POLAR_CLIENT_SECRET"],
-    access_token_url=os.environ["POLAR_ACCESS_TOKEN_URL"],
-    access_token_params={'grant_type': 'authorization_code'},
-    authorize_url=os.environ["POLAR_AUTHORIZATION_URL"],
-    api_base_url=os.environ["POLAR_API_URL"]
-)
+def init_oauth_client():
+    """Setup authlib with flask application"""
+    global oauth
+    oauth = OAuth()
+    oauth.init_app(current_app)
+    oauth.register(
+        name='polar',
+        client_id=os.environ["POLAR_CLIENT_ID"],
+        client_secret=os.environ["POLAR_CLIENT_SECRET"],
+        access_token_url=os.environ["POLAR_ACCESS_TOKEN_URL"],
+        access_token_params={'grant_type': 'authorization_code'},
+        authorize_url=os.environ["POLAR_AUTHORIZATION_URL"],
+        api_base_url=os.environ["POLAR_API_URL"] + "/" # Quick fix
+    )
+    return oauth
+oauth_page = Blueprint('oauth', __name__, template_folder='templates') # OAuth as blueprint
 
 @oauth_page.route("/login")
 def login():
@@ -38,15 +41,16 @@ def login():
 def callback():
     """Retrieve access token after callback and store"""
     token_response = oauth.polar.authorize_access_token()
-    acces_token = token_response["access_token"]
+    access_token = token_response["access_token"]
+    acces_token_c = current_app.cipher.encrypt(access_token.encode()).decode()
     user_id = str(token_response["x_user_id"])
     expires_at = datetime.fromtimestamp(token_response["expires_at"])
 
     # Create user in the external database
     current_app.service.register_user(user_id)
 
-    # Save access token in the database
-    current_app.service.update_client_credentials(user_id, acces_token, expires_at)
+    # Save encrypted access token in the database
+    current_app.service.update_client_credentials(user_id, acces_token_c, expires_at)
 
     # Register the Polar user as a user of this client
     register_client_user(user_id)
@@ -55,7 +59,6 @@ def callback():
     create_user_session(user_id=user_id)
 
     return redirect("/")
-
 
 @oauth_page.route("/logout")
 def logout():
