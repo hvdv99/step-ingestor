@@ -1,27 +1,19 @@
 from flask import session
 from typing import Optional, TypedDict
 
-__sessionUserKey = 'user'
-
+__session_user_key = 'user'
 
 class User(TypedDict):
     user_id: str
-    access_token: str
 
-
-def create_user_session(user_id: str, access_token=""):
-    user: User = {
-        "user_id": user_id,
-        "access_token": access_token
-    }
-    session[__sessionUserKey] = user
-
+def create_user_session(user_id: str):
+    user: User = {"user_id": user_id}
+    session[__session_user_key] = user
 
 def clear_user_session():
-    session.pop(__sessionUserKey, None)
-
+    session.pop(__session_user_key, None)
 
 def get_user_from_session() -> Optional[User]:
-    if not __sessionUserKey in session:
+    if not __session_user_key in session:
         return None
-    return session[__sessionUserKey]
+    return session[__session_user_key]

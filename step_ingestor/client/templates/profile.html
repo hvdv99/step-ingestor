@@ -9,12 +9,10 @@
 
 <body>
     <a href="{{url_for('oauth.logout')}}">Logout</a>
+    <a href="/dashboard/d">Dashboard</a>
     <br>
     <a href="{{url_for('index')}}">Home</a>
-    <p>Hi, {{session['user']['user_id']}}!</p>
-    <p>User ID - {{session['user']['user_id']}}</p>
-    <p>Polar User ID - {{session['user']['user_id']}}</p>
-    <p>Access Token - {{session['user']['access_token']}}</p>
+    <p>Hi, your user ID is: {{session['user']['user_id']}}!</p>
     <br>
     <p>Session - {{ session }}</p>
 </body>

@@ -6,14 +6,13 @@
 </head>
 <body>
     <header>
-            <a href="{{url_for('oauth.logout')}}">Logout</a>
-        {% for name in g.freqs %}
-            <a href="/dashboard/{{name}}">{{name}} view</a>
+        <a href="{{url_for('oauth.logout')}}">Logout</a>
+        {% for freq in g.freqs %}
+        <a href="/dashboard/{{ freq }}">{{ freq }} view</a>
         {% endfor %}
-
     </header>
 
-    {{ g.plot }}
+        {{ g.plot }}
 
 </body>
 </html>
