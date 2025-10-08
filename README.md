@@ -38,6 +38,7 @@ Create simple but secure application
 * https://refactoring.guru/design-patterns/adapter
 * https://flask.palletsprojects.com/en/stable/web-security/
 * https://www.cosmicpython.com/book/chapter_02_repository.html
+* 
 
 ## Log
 * Day 1: Test OAuth Workflow from Polar Example repository (DONE)

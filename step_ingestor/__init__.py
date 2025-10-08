@@ -5,3 +5,4 @@ from .interfaces import *
 from .services import *
 from .repositories import *
 from .services import *
+from .client import *

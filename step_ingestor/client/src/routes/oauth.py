@@ -23,13 +23,14 @@ def init_oauth_client():
         api_base_url=os.environ["POLAR_API_URL"] + "/" # Quick fix
     )
     return oauth
+
 oauth_page = Blueprint('oauth', __name__, template_folder='templates') # OAuth as blueprint
 
 @oauth_page.route("/login")
 def login():
     """Login view"""
 
-    # check if session already present
+    # check if user session cookie is already present
     if "user" in session:
         abort(404)
 

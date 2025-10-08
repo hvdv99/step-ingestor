@@ -6,10 +6,11 @@ import os
 import sys
 import logging
 
-from flask import Flask, render_template, request, g, abort
+from flask import render_template, request, g, abort
 from markupsafe import Markup
 from cryptography import fernet
 
+from step_ingestor.client.src.security.init_app import init_app
 from step_ingestor.client.src.routes.oauth import init_oauth_client, oauth_page
 from step_ingestor.client.src.security.user import get_user_from_session
 from step_ingestor.client.src.security.decorators import login_required
@@ -19,9 +20,7 @@ from step_ingestor.analytics.step_toolbox import UserStepPlotter
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-
-app = Flask(__name__, template_folder="templates")
-app.secret_key = os.environ["FLASK_APP_SECRET"]
+app = init_app()
 
 with app.app_context():
     init_oauth_client()
@@ -83,4 +82,4 @@ def refresh_user_data():
 
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000)
