@@ -25,7 +25,8 @@ app = init_app()
 with app.app_context():
     init_oauth_client()
     app.service = service = IngestionService(os.environ["POLAR_CLIENT_ID"],
-                                             os.environ["POLAR_CLIENT_SECRET"])
+                                             os.environ["POLAR_CLIENT_SECRET"],
+                                             os.environ["POLAR_CALLBACK_URL"])
     app.cipher = fernet.Fernet(app.secret_key.encode())
 
 app.register_blueprint(oauth_page, urlprefix="/oauth")
@@ -82,4 +83,4 @@ def refresh_user_data():
 
 
 if __name__ == '__main__':
-    app.run(host="127.0.0.1", port=5000)
+    app.run(host="localhost", port=5000)

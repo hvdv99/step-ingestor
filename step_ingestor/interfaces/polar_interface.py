@@ -12,13 +12,8 @@ class PolarApiFetcher(object):
     Interface for Polar API source code.
     Returns data in JSON format.
     """
-    def __init__(self, client_id, client_secret):
-        self.link = AccessLink(client_id, client_secret)
-
-    @property
-    def authenticated(self):
-        if os.environ.get("POLAR_ACCESS_TOKEN", False):
-            return True
+    def __init__(self, client_id, client_secret, redirect_url):
+        self.link = AccessLink(client_id, client_secret, redirect_url)
 
     def fetch_day(self, day: str, access_token) -> RawDailyPayload | None:
         payload = self.link.get_activity_day(access_token,

@@ -14,8 +14,8 @@ DailyPayload: TypeAlias = tuple[ActivitySummaryDTO, Sequence[StepSampleDTO]]
 
 class IngestionService:
     """Service that uses adapters for the DB and Polar API source code"""
-    def __init__(self, client_id, client_secret):
-        self.provider = Adapter(client_id, client_secret)
+    def __init__(self, client_id, client_secret, redirect_url):
+        self.provider = Adapter(client_id, client_secret, redirect_url)
         self.repo = StepIngestorRepository(SessionFactory)
 
     def register_user(self, user_id):

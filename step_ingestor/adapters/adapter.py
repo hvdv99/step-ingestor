@@ -13,8 +13,8 @@ class Adapter:
     Source: Polar API interface
     Target: Repository"""
 
-    def __init__(self, client_id, client_secret):
-        self._adaptee = PolarApiFetcher(client_id, client_secret)
+    def __init__(self, client_id, client_secret, redirect_url):
+        self._adaptee = PolarApiFetcher(client_id, client_secret, redirect_url)
 
     def fetch_day(self, day: str, access_token, user_id) -> Sequence[DailyPayload] | None:
 
