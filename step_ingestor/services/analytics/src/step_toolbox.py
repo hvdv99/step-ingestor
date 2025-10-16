@@ -1,5 +1,3 @@
-# TODO: Set up read only db engine
-
 import pandas as pd
 import plotly.express as px
 

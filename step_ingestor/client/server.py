@@ -15,8 +15,8 @@ from step_ingestor.client.src.routes.oauth import init_oauth_client, oauth_page
 from step_ingestor.client.src.security.user import get_user_from_session
 from step_ingestor.client.src.security.decorators import login_required
 
-from step_ingestor.services import IngestionService
-from step_ingestor.analytics.step_toolbox import UserStepPlotter
+from step_ingestor.services.ingestion import IngestionService
+from step_ingestor.services.analytics import UserStepPlotter
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 

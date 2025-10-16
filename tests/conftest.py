@@ -27,7 +27,7 @@ def _data_path() -> Path:
     """Set path for mockdata"""
     here = Path(__file__).resolve()
     repo_root = here.parent.parent
-    return repo_root / "tests" / "mockserver" / "mockdata" / "Activities-1758134751844.json"
+    return repo_root / "tests" / "mockserver" / "mockdata" / "mockdata.json"
 
 
 @pytest.fixture(scope="session")
