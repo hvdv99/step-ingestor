@@ -8,7 +8,7 @@ def init_app():
     app = Flask(__name__, template_folder="../../templates")
 
     app.config.update(
-        DEBUG=True,
+        DEBUG=False,
         SECRET_KEY=os.environ["FLASK_SECRET_KEY"],
         SESSION_COOKIE_SECURE=True,    # Session cookies can only be sent over HTTPS
         SESSION_COOKIE_HTTPONLY=True,  # Session cookies can only be read with HTML and not with JavaScript

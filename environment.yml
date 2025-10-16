@@ -1,11 +1,25 @@
-name: step-ingestor
 channels:
-  - nodefaults
   - conda-forge
 dependencies:
-  - python=3.12
+  - python=3.13
   - pip
   - setuptools
   - conda-libmamba-solver
+  - Flask=3.1.2
+  - gunicorn
+  - SQLAlchemy=2.0.43
+  - psycopg2=2.9.10
+  - plotly=6.3.0
+  - pandas=2.3.2
+  - cryptography=46.0.1
+  - pydantic=2.11.9
+  - pyyaml=6.0.3
+  - Authlib=1.6.5
+  - python-dotenv=1.1.1
+  # Tests
+  - pytest=8.4.2
+  - fastapi
+  - isodate
   - pip:
-      -e .
+      - sqlalchemy-timescaledb==0.4.1
+      - testcontainers==4.13.2

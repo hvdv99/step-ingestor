@@ -10,9 +10,9 @@ except ImportError:
 class OAuth2Client(object):
     """Wrapper class for OAuth2 requests"""
 
-    def __init__(self, url, authorization_url, access_token_url, redirect_url,
+    def __init__(self, api_url, authorization_url, access_token_url, redirect_url,
                  client_id, client_secret):
-        self.url = url
+        self.url = api_url
         self.authorization_url = authorization_url
         self.access_token_url = access_token_url
         self.redirect_url = redirect_url
@@ -109,7 +109,7 @@ class OAuth2Client(object):
                                                        body=response.text.encode('utf-8'))
             raise HTTPError(message, response=response)
 
-        if response.status_code is 204:
+        if response.status_code == 204:
             return {}
 
         try:

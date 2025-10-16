@@ -21,7 +21,7 @@ class StepIngestorRepository:
         self._autocommit = autocommit
 
     def _begin(self):
-        """Allows a fresh session for each CRUD operation"""
+        """returns a new session for each CRUD operation"""
         return self._session_factory()
 
     def add_user(self, user_id: str) -> int:
@@ -128,9 +128,7 @@ class StepIngestorRepository:
             return 0 if result.rowcount in (None, -1) else result.rowcount
 
     def _upsert_step_samples_batch(self,
-                                   samples: Sequence[StepSampleDTO] | Sequence[Sequence[StepSampleDTO]]
-                                   ) -> int:
-
+                                   samples: Sequence[StepSampleDTO] | Sequence[Sequence[StepSampleDTO]]) -> int:
         # When no samples are available for the day:
         if not samples:
             return 0
@@ -158,7 +156,6 @@ class StepIngestorRepository:
             return result
 
     def get_user_steps(self, user_id):
-        # TODO: Move to a query repo
         with self._begin() as db:
             stmt = sa.select(StepSample.timestamp, StepSample.steps).where(StepSample.user_id == user_id)
             result = db.execute(stmt).all()

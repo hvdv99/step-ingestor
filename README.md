@@ -24,6 +24,15 @@ Create simple but secure application
 * Testing: Load test and authorization 
 * Deployment: CI/CD
 
+## Tests
+### Unit
+* Polar Interface
+* Repository Interface
+### Integration
+* Adapter
+* Service layer
+* Client
+
 ## Architecture
 
 ## Tech stack
@@ -32,6 +41,11 @@ Create simple but secure application
 * alembic
 * Authlib
 * Flask
+
+## CI Pipeline
+1. Build test docker file
+2. Run tests 
+3. Push to image registry
 
 ##  References
 * https://www.polar.com/accesslink-api/#polar-accesslink-api

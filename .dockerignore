@@ -1,0 +1,11 @@
+/docs
+/archive
+/dbdata
+compose.yaml
+compose.old.yaml
+.gitignore
+nginx.conf
+setup_nginx.sh
+README.md
+alembic.ini
+db/db_migrations

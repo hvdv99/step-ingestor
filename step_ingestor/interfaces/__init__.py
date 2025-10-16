@@ -1,9 +1,7 @@
-from .polar_interface import PolarApiFetcher
 from .polar.accesslink import AccessLink
-from .repository import StepRepository
+from .repositories import StepIngestorRepository
 
 __all__ = [
-    "PolarApiFetcher",
     "AccessLink",
-    "StepRepository"
+    "StepIngestorRepository"
 ]

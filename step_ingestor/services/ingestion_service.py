@@ -1,10 +1,10 @@
-"""Contains operational application logic"""
+"""Contains the operational application logic"""
 import logging
 from datetime import date, timedelta
 from typing import Sequence, TypeAlias
 
 from step_ingestor.adapters import Adapter
-from step_ingestor.repositories import StepIngestorRepository
+from step_ingestor.interfaces import StepIngestorRepository
 from step_ingestor.db import SessionFactory
 from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO
 

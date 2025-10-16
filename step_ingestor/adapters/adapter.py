@@ -1,10 +1,8 @@
 import datetime as dt
 from typing import Any, Sequence, TypeAlias, Mapping
-
-from step_ingestor.interfaces import PolarApiFetcher
 from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO
 
-RawDailyPayload: TypeAlias = Mapping[str, Any]
+RawDailyPayload: TypeAlias = Mapping[str, Any] # Raw JSON Response from API
 DailyPayload: TypeAlias = tuple[ActivitySummaryDTO, Sequence[StepSampleDTO]]
 
 
@@ -13,30 +11,31 @@ class Adapter:
     Source: Polar API interface
     Target: Repository"""
 
-    def __init__(self, client_id, client_secret, redirect_url):
-        self._adaptee = PolarApiFetcher(client_id, client_secret, redirect_url)
+    def __init__(self, adaptee, dto_dact, dto_step):
+        self._adaptee = adaptee
+        self._out_forms = {"dto_dact": dto_dact,
+                           "dto_step": dto_step}
 
-    def fetch_day(self, day: str, access_token, user_id) -> Sequence[DailyPayload] | None:
-
-        raw = self._adaptee.fetch_day(day, access_token)
-
+    def get_activity_day(self, day: str, access_token, user_id) -> Sequence[DailyPayload] | None:
+        raw = self._adaptee.get_activity_day(day=day,
+                                             access_token=access_token,
+                                             steps=True)
         # Polar response is empty
         if not raw:
             return None
-
         return self._raw_payload_to_dto(raw, user_id)
 
-    def fetch_date_range(self, from_to: tuple[str, str], access_token, user_id) -> Sequence[DailyPayload] | None:
-        raw = self._adaptee.fetch_date_range(from_to, access_token)
-
+    def get_activity_date_range(self, date_from, date_to, access_token, user_id) -> Sequence[DailyPayload] | None:
+        raw = self._adaptee.get_activity_date_range(date_from=date_from,
+                                                    to=date_to,
+                                                    access_token=access_token,
+                                                    steps=True)
         # Polar response is empty
         if not raw:
             return None
-
         return self._raw_payload_to_dto(raw, user_id)
 
-    @staticmethod
-    def _raw_payload_to_dto(raw, user_id) -> Sequence[DailyPayload]:
+    def _raw_payload_to_dto(self, raw, user_id) -> Sequence[DailyPayload]:
         if not isinstance(raw, list):
             raws = [raw]
         else:
@@ -44,7 +43,17 @@ class Adapter:
 
         payloads_ = []
         for r in raws:
-            summary_dto = ActivitySummaryDTO(
+            # Check what data to parse
+            if r:
+                try:
+                    step_samples = r["samples"]["steps"]["samples"]
+                except KeyError:
+                    step_samples = []
+            else:
+                continue
+
+            # Parse daily activity
+            summary_dto = self._out_forms["dto_dact"](
                 **{
                     **r,
                     "user_id": user_id,
@@ -52,13 +61,11 @@ class Adapter:
                 }
             )
 
-            samples = r.get("samples").get("steps").get("samples")
-            if samples:
-                sample_dtos = [StepSampleDTO(**{**s, "user_id": user_id}) for s in samples]
-            else:
-                sample_dtos = []
+            # Parse step samples
+            if step_samples:
+                step_samples = [self._out_forms["dto_step"](**{**s, "user_id": user_id}) for s in step_samples]
 
             payloads_.append(
-                (summary_dto, sample_dtos)
+                (summary_dto, step_samples)
             )
         return payloads_

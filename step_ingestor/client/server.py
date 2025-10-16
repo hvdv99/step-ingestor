@@ -31,11 +31,11 @@ with app.app_context():
 
 app.register_blueprint(oauth_page, urlprefix="/oauth")
 
-@app.route('/')
+@app.route("/")
 def index():
     return render_template("home.html")
 
-@app.route('/profile')
+@app.route("/profile")
 @login_required
 def profile():
     return render_template("profile.html")
@@ -46,8 +46,8 @@ def dashboard(freq):
 
     refresh_user_data()
 
-    freqs = {'hour': 'h', 'day': 'd', 'week': 'W',
-             'month': 'ME', 'quarterly': 'QE', 'year': 'YE'}
+    freqs = {"hour": "h", "day": "d", "week": "W",
+             "month": "ME", "quarterly": "QE", "year": "YE"}
 
     if freq not in freqs:
         abort(404)
@@ -57,8 +57,8 @@ def dashboard(freq):
     g.freqs = freqs
 
     # Fetch optional query params from request
-    from_ = request.args.get('from', None)
-    to = request.args.get('to', None)
+    from_ = request.args.get("from", None)
+    to = request.args.get("to", None)
 
     # Retrieve user data to make plot
     user = get_user_from_session()
@@ -82,5 +82,8 @@ def refresh_user_data():
     return False
 
 
-if __name__ == '__main__':
-    app.run(host="localhost", port=5000)
+if __name__ == "__main__":
+    app.run(
+        host=os.environ["CLIENT_HOST"],
+        port=int(os.environ["CLIENT_PORT"])
+    )
