@@ -1,7 +1,8 @@
-from .dto import StepSampleDTO, ActivitySummaryDTO, UserDTO
+from .dto import StepSampleDTO, ActivitySummaryDTO, UserDTO, TokenDTO
 
 __all__ = [
     "StepSampleDTO",
     "ActivitySummaryDTO",
-    "UserDTO"
+    "UserDTO",
+    "TokenDTO"
 ]

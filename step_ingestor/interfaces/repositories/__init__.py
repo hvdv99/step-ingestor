@@ -1,4 +1,4 @@
-from .step_db_repo import StepIngestorRepository
+from .repo import StepIngestorRepository
 
 __all__ = [
     "StepIngestorRepository"

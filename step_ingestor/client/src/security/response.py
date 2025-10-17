@@ -1,5 +1,6 @@
 from flask import make_response
 
+
 def make_response_secure(*args):
     resp = make_response(*args)
     resp.headers["Strict-Transport-Security"] = "max-age=3600; includeSubDomains" # Force browser to use HTTPS

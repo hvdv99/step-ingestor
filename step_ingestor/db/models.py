@@ -73,6 +73,7 @@ class AccessToken(Base):
 
     __table_args__ = (UniqueConstraint("user_id"),)
 
+
 class ActivitySummary(Base):
     __tablename__ = "activity_summary"
 

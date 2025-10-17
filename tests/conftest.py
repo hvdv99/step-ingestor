@@ -18,7 +18,7 @@ from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
 from step_ingestor.db import Base, AppUser
 from step_ingestor.interfaces import AccessLink, StepIngestorRepository
-from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO
+from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO, UserDTO
 from step_ingestor.adapters import Adapter
 
 
@@ -33,7 +33,7 @@ def _data_path() -> Path:
 @pytest.fixture(scope="session")
 def test_users():
     """Test users ids to seed the database"""
-    return ["123", "456", "789"]
+    return [UserDTO(user_id=uid, created_at=datetime.now(), updated_at=datetime.now()) for uid in ["123", "456", "789"]]
 
 
 # --- Polar API ---
@@ -97,8 +97,8 @@ def random_raw_payload(raw_payloads):
 
 @pytest.fixture(scope="module")
 def all_dtos(adapter, raw_payloads, test_users):
-    uid = random.choice(test_users)
-    return adapter._raw_payload_to_dto(raw_payloads, user_id=uid)
+    u_id = test_users[0].user_id
+    return adapter._raw_payload_to_dto(raw_payloads, user_id=u_id)
 
 
 @pytest.fixture(scope="function")
@@ -147,11 +147,22 @@ def engine(testdb_config, request):
     return engine
 
 
+@pytest.fixture(scope="session")
+def session_factory(engine):
+    return sessionmaker(bind=engine, expire_on_commit=False)
+
+
+@pytest.fixture(scope="session")
+def repo(session_factory):
+    return StepIngestorRepository(session_factory=session_factory,
+                                  autocommit=True)
+
+
 @pytest.fixture(autouse=True, scope="session")
 def seed_test_users(session_factory, test_users):
 
     test_users_rows = [
-        {"user_id": uid, "created_at": datetime.now(), "updated_at": datetime.now()} for uid in test_users
+        {"user_id": user.user_id, "created_at": datetime.now(), "updated_at": datetime.now()} for user in test_users
     ]
 
     stmt = sa.insert(AppUser).values(
@@ -161,14 +172,3 @@ def seed_test_users(session_factory, test_users):
     with session_factory() as db:
         db.execute(stmt)
         db.commit()
-
-
-@pytest.fixture(scope="session")
-def session_factory(engine):
-    return sessionmaker(bind=engine, expire_on_commit=False)
-
-
-@pytest.fixture(scope="session")
-def repo(session_factory):
-    return StepIngestorRepository(session_factory=session_factory,
-                                  autocommit=False)

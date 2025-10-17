@@ -1,11 +1,9 @@
-"""Contains the operational application logic"""
+"""Contains operational application logic to retrieve data from the polar API
+and store it in the database."""
 import logging
 from datetime import date, timedelta
 from typing import Sequence, TypeAlias
 
-from step_ingestor.adapters import Adapter
-from step_ingestor.interfaces import StepIngestorRepository
-from step_ingestor.db import SessionFactory
 from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO
 
 from .utils import date_windows_28d
@@ -13,19 +11,22 @@ from .utils import date_windows_28d
 DailyPayload: TypeAlias = tuple[ActivitySummaryDTO, Sequence[StepSampleDTO]]
 
 class IngestionService:
-    """Service that uses adapters for the DB and Polar API source code"""
-    def __init__(self, client_id, client_secret, redirect_url):
-        self.provider = Adapter(client_id, client_secret, redirect_url)
-        self.repo = StepIngestorRepository(SessionFactory)
+    """"""
+    def __init__(self, provider, repo):
+        self.provider = provider
+        self.repo = repo
 
-    def register_user(self, user_id):
+    def add_user(self, user_id):
+        """Register the user id in the database"""
         return self.repo.add_user(user_id)
 
-    def update_client_credentials(self, user_id, access_token, expires_at):
-        return self.repo.upsert_access_token(user_id=user_id, access_token=access_token,
+    def update_access_token(self, user_id, access_token, expires_at):
+        """"""
+        return self.repo.upsert_access_token(user_id=user_id,
+                                             access_token=access_token,
                                              issuer="polar", expires_at=expires_at)
 
-    def fetch_access_token(self, user_id):
+    def get_access_token(self, user_id):
         return self.repo.fetch_access_token(user_id=user_id)
 
     def populate_db_historical(self, access_token, user_id):

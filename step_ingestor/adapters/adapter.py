@@ -1,9 +1,8 @@
 import datetime as dt
 from typing import Any, Sequence, TypeAlias, Mapping
-from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO
+from step_ingestor.dto import ActivitySummaryDTO
 
 RawDailyPayload: TypeAlias = Mapping[str, Any] # Raw JSON Response from API
-DailyPayload: TypeAlias = tuple[ActivitySummaryDTO, Sequence[StepSampleDTO]]
 
 
 class Adapter:
@@ -16,7 +15,7 @@ class Adapter:
         self._out_forms = {"dto_dact": dto_dact,
                            "dto_step": dto_step}
 
-    def get_activity_day(self, day: str, access_token, user_id) -> Sequence[DailyPayload] | None:
+    def get_activity_day(self, day: str, access_token, user_id) -> Sequence[ActivitySummaryDTO] | None:
         raw = self._adaptee.get_activity_day(day=day,
                                              access_token=access_token,
                                              steps=True)
@@ -25,7 +24,7 @@ class Adapter:
             return None
         return self._raw_payload_to_dto(raw, user_id)
 
-    def get_activity_date_range(self, date_from, date_to, access_token, user_id) -> Sequence[DailyPayload] | None:
+    def get_activity_date_range(self, date_from, date_to, access_token, user_id) -> Sequence[ActivitySummaryDTO] | None:
         raw = self._adaptee.get_activity_date_range(date_from=date_from,
                                                     to=date_to,
                                                     access_token=access_token,
@@ -35,7 +34,10 @@ class Adapter:
             return None
         return self._raw_payload_to_dto(raw, user_id)
 
-    def _raw_payload_to_dto(self, raw, user_id) -> Sequence[DailyPayload]:
+    def _raw_payload_to_dto(self, raw, user_id) -> Sequence[ActivitySummaryDTO] | None:
+        if not raw:
+            return None
+
         if not isinstance(raw, list):
             raws = [raw]
         else:
@@ -48,24 +50,24 @@ class Adapter:
                 try:
                     step_samples = r["samples"]["steps"]["samples"]
                 except KeyError:
-                    step_samples = []
+                    step_samples = None
             else:
                 continue
-
-            # Parse daily activity
-            summary_dto = self._out_forms["dto_dact"](
-                **{
-                    **r,
-                    "user_id": user_id,
-                    "date": dt.datetime.fromisoformat(r["start_time"]).date().isoformat(),
-                }
-            )
 
             # Parse step samples
             if step_samples:
                 step_samples = [self._out_forms["dto_step"](**{**s, "user_id": user_id}) for s in step_samples]
 
-            payloads_.append(
-                (summary_dto, step_samples)
+            # Parse daily activity
+            activity_dto = self._out_forms["dto_dact"](
+                **{
+                    **r,
+                    "user_id": user_id,
+                    "date": dt.datetime.fromisoformat(r["start_time"]).date().isoformat(),
+                    "step_samples": step_samples
+                }
             )
+            payloads_.append(activity_dto)
+        if len(payloads_) == 1:
+            return payloads_.pop()
         return payloads_

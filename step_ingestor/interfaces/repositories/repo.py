@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from datetime import date as date_cls
-from typing import Sequence, TypeAlias, Protocol
+from typing import Sequence, TypeAlias
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
+from pydantic import TypeAdapter
 
 from step_ingestor.db import AppUser, ActivitySummary, StepSample, AccessToken
-from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO
+from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO, UserDTO, TokenDTO
 
 DailyPayload: TypeAlias = tuple[ActivitySummaryDTO, Sequence[StepSampleDTO]]
 
@@ -20,47 +21,50 @@ class StepIngestorRepository:
         self._session_factory = session_factory
         self._autocommit = autocommit
 
-    def _begin(self):
+    def _begin(self) -> Session:
         """returns a new session for each CRUD operation"""
         return self._session_factory()
 
-    def add_user(self, user_id: str) -> int:
-        """Idempotent insert. Returns 1 if inserted, 0 if already existed."""
-        stmt = pg_insert(AppUser).values({"user_id": user_id})
+    def add_user(self, user: UserDTO) -> bool:
+        """Idempotent insert. Returns True if inserted, False if already existed."""
+        stmt = pg_insert(AppUser).values(user.model_dump_json(exclude={"access_token"}))
         stmt = stmt.on_conflict_do_nothing(index_elements=[AppUser.user_id])
 
         with self._begin() as db:
             res = db.execute(stmt)
             db.commit()
-            return res.rowcount or 0
+            return res.rowcount == 1
 
-    def delete_user(self, user_id: str) -> int:
-        """Deletes the user and associated rows in other tables (cascade).
-        Returns the number of rows deleted (0 or 1)."""
-        stmt = sa.delete(AppUser).where(AppUser.user_id == user_id)
+    def delete_user(self, user: UserDTO) -> int:
+        """Deletes the user and associated rows in other tables (cascade)."""
+        stmt = sa.delete(AppUser).where(AppUser.user_id == user.user_id)
         with self._begin() as db:
             res = db.execute(stmt)
             db.commit()
-            return res.rowcount or 0
+            return res.rowcount == 1
 
-    def upsert_access_token(self, *,
-                            user_id: str,
-                            access_token: str,
-                            issuer: str,
-                            expires_at: datetime | None = None) -> int:
+    def get_user_by_id(self, user_id) -> UserDTO | None:
+        stmt = sa.select([AppUser, AccessToken]).where(AppUser.user_id == user_id)
+        with self._begin() as db:
+            res = db.execute(stmt).one_or_none()
+
+        if res:
+            user, token = res
+            t = TokenDTO.model_validate(token)
+            u = UserDTO.model_validate(user)
+            u.access_token = t
+            return u
+        else:
+            return None
+
+    def update_user_access_token(self, *, user: UserDTO) -> int:
         """Creates/updates the one-to-one token row for the user.
         Returns 1 on insert/update, 0 on conflict.
         """
         with self._begin() as db:
             stmt = pg_insert(AccessToken).values(
-                {
-                    "user_id": user_id,
-                    "access_token": access_token,
-                    "issuer": issuer,
-                    "expires_at": expires_at,
-                }
+                user.access_token.model_dump_json()
             )
-
             stmt = stmt.on_conflict_do_update(
                 index_elements=[AccessToken.user_id],
                 set_={
@@ -70,36 +74,53 @@ class StepIngestorRepository:
                     "updated_at": sa.func.now()
                 },
             )
-
             res = db.execute(stmt)
             db.commit()
-            return res.rowcount or 0
+            return res.rowcount == 1
 
-    def fetch_access_token(self, user_id):
+    def get_user_access_token(self, user: UserDTO) -> UserDTO | None:
         with self._begin() as db:
-            stmt = sa.select(AccessToken.access_token).where(AccessToken.user_id == user_id)
-            result = db.execute(stmt).scalar_one_or_none()
-            return result
+            stmt = sa.select(AccessToken).where(AccessToken.user_id == user.user_id)
+            token = db.execute(stmt).one_or_none()
+            if token:
+                token_dto = TokenDTO.model_validate(token)
+                user.access_token = token_dto
+                return user
+            return None
 
+    def get_user_data(self, user: UserDTO) -> list[ActivitySummaryDTO]:
+        stmt_summary = sa.select(ActivitySummary).where(ActivitySummary.user_id == user.user_id)
+        data = []
+        with self._begin() as db:
+            summaries = db.execute(stmt_summary).scalars()
+            for s in summaries:
+                dto = ActivitySummaryDTO.model_validate(s)
 
-    def ingest_payload(self, payload: DailyPayload | Sequence[DailyPayload]) -> bool:
-        if isinstance(payload, tuple):
+                stmt_steps = sa.select(StepSample).where(StepSample.timestamp == dto.date)
+                steps = db.execute(stmt_steps).scalars()
+                adapter = TypeAdapter(list[StepSampleDTO])
+                samples = adapter.validate_python(steps)
+
+                dto.step_samples = samples
+                data.append(dto)
+            return data
+
+    def ingest_payload(self, payload: Sequence[ActivitySummaryDTO]) -> bool:
+        if not isinstance(payload, list):
             payloads = [payload]
         else:
             payloads = payload
 
         return all(
-            bool(self._upsert_activity_summary(summary)) and
-            bool(self._upsert_step_samples_batch(samples))
-            for summary, samples in payloads
+            self._upsert_activity_summary(summary) and self._upsert_step_samples_batch(summary.step_samples)
+            for summary in payloads
         )
 
     def _upsert_activity_summary(self, summary: ActivitySummaryDTO | Sequence[ActivitySummaryDTO]) -> int:
-
         if not isinstance(summary, Sequence):
             summary = [summary]
 
-        summary = [s.model_dump() for s in summary]
+        summary = [s.model_dump(exclude={"step_samples"}, by_alias=True) for s in summary]
 
         stmt = pg_insert(ActivitySummary).values(
             summary
@@ -129,9 +150,10 @@ class StepIngestorRepository:
 
     def _upsert_step_samples_batch(self,
                                    samples: Sequence[StepSampleDTO] | Sequence[Sequence[StepSampleDTO]]) -> int:
+
         # When no samples are available for the day:
         if not samples:
-            return 0
+            return 1
 
         # Situation when there are multiple days in samples
         if isinstance(samples[0], StepSampleDTO):
@@ -153,12 +175,6 @@ class StepIngestorRepository:
         with self._begin() as db:
             stmt = sa.select(sa.func.max(ActivitySummary.date)).where(ActivitySummary.user_id == user_id)
             result = db.execute(stmt).scalar_one_or_none()
-            return result
-
-    def get_user_steps(self, user_id):
-        with self._begin() as db:
-            stmt = sa.select(StepSample.timestamp, StepSample.steps).where(StepSample.user_id == user_id)
-            result = db.execute(stmt).all()
             return result
 
 def _now() -> datetime:
