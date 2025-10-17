@@ -1,6 +1,6 @@
 import datetime as dt
 from typing import Any, Sequence, TypeAlias, Mapping
-from step_ingestor.dto import ActivitySummaryDTO
+from step_ingestor.dto import ActivitySummaryDTO, UserDTO
 
 RawDailyPayload: TypeAlias = Mapping[str, Any] # Raw JSON Response from API
 
@@ -24,15 +24,15 @@ class Adapter:
             return None
         return self._raw_payload_to_dto(raw, user_id)
 
-    def get_activity_date_range(self, date_from, date_to, access_token, user_id) -> Sequence[ActivitySummaryDTO] | None:
+    def get_activity_date_range(self, date_from, date_to, user: UserDTO) -> Sequence[ActivitySummaryDTO] | None:
         raw = self._adaptee.get_activity_date_range(date_from=date_from,
                                                     to=date_to,
-                                                    access_token=access_token,
+                                                    access_token=user.access_token.token,
                                                     steps=True)
         # Polar response is empty
         if not raw:
             return None
-        return self._raw_payload_to_dto(raw, user_id)
+        return self._raw_payload_to_dto(raw, user_id=user.user_id)
 
     def _raw_payload_to_dto(self, raw, user_id) -> Sequence[ActivitySummaryDTO] | None:
         if not raw:

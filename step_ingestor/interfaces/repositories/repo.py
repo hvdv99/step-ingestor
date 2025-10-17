@@ -31,9 +31,13 @@ class StepIngestorRepository:
         stmt = stmt.on_conflict_do_nothing(index_elements=[AppUser.user_id])
 
         with self._begin() as db:
-            res = db.execute(stmt)
+            res = db.execute(stmt).rowcount()
             db.commit()
-            return res.rowcount == 1
+
+        if user.access_token:
+            self.update_user_access_token(user)
+
+        return res > 0
 
     def delete_user(self, user: UserDTO) -> int:
         """Deletes the user and associated rows in other tables (cascade)."""
@@ -57,7 +61,7 @@ class StepIngestorRepository:
         else:
             return None
 
-    def update_user_access_token(self, *, user: UserDTO) -> int:
+    def update_user_access_token(self, user: UserDTO) -> int:
         """Creates/updates the one-to-one token row for the user.
         Returns 1 on insert/update, 0 on conflict.
         """
@@ -78,7 +82,7 @@ class StepIngestorRepository:
             db.commit()
             return res.rowcount == 1
 
-    def get_user_access_token(self, user: UserDTO) -> UserDTO | None:
+    def get_access_token(self, user: UserDTO) -> UserDTO | None:
         with self._begin() as db:
             stmt = sa.select(AccessToken).where(AccessToken.user_id == user.user_id)
             token = db.execute(stmt).one_or_none()
@@ -170,10 +174,10 @@ class StepIngestorRepository:
             db.commit()
             return 0 if result.rowcount in (None, -1) else result.rowcount
 
-    def get_latest_summary_date(self, user_id) -> date_cls | None:
+    def get_latest_summary_date(self, user: UserDTO) -> date_cls | None:
         """Return the most recent date stored in the daily summary table."""
         with self._begin() as db:
-            stmt = sa.select(sa.func.max(ActivitySummary.date)).where(ActivitySummary.user_id == user_id)
+            stmt = sa.select(sa.func.max(ActivitySummary.date)).where(ActivitySummary.user_id == user.user_id)
             result = db.execute(stmt).scalar_one_or_none()
             return result
 
