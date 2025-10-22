@@ -12,54 +12,34 @@ from pydantic import TypeAdapter
 from step_ingestor.db import AppUser, ActivitySummary, StepSample, AccessToken
 from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO, UserDTO, TokenDTO
 
-DailyPayload: TypeAlias = tuple[ActivitySummaryDTO, Sequence[StepSampleDTO]]
-
 class StepIngestorRepository:
     """Repository that saves DTOs in the database."""
 
-    def __init__(self, session_factory: sessionmaker, *, autocommit: bool = True):
+    def __init__(self, session_factory: sessionmaker = None, *,
+                 session: Session = None, autocommit: bool = True):
         self._session_factory = session_factory
+        self._session = session
         self._autocommit = autocommit
 
     def _begin(self) -> Session:
         """returns a new session for each CRUD operation"""
+        if self._session:
+            return self._session
         return self._session_factory()
 
     def add_user(self, user: UserDTO) -> bool:
         """Idempotent insert. Returns True if inserted, False if already existed."""
-        stmt = pg_insert(AppUser).values(user.model_dump_json(exclude={"access_token"}))
+        stmt = pg_insert(AppUser).values(user.model_dump(exclude={"access_token"}))
         stmt = stmt.on_conflict_do_nothing(index_elements=[AppUser.user_id])
 
         with self._begin() as db:
-            res = db.execute(stmt).rowcount()
-            db.commit()
-
-        if user.access_token:
-            self.update_user_access_token(user)
-
-        return res > 0
-
-    def delete_user(self, user: UserDTO) -> int:
-        """Deletes the user and associated rows in other tables (cascade)."""
-        stmt = sa.delete(AppUser).where(AppUser.user_id == user.user_id)
-        with self._begin() as db:
-            res = db.execute(stmt)
-            db.commit()
-            return res.rowcount == 1
-
-    def get_user_by_id(self, user_id) -> UserDTO | None:
-        stmt = sa.select([AppUser, AccessToken]).where(AppUser.user_id == user_id)
-        with self._begin() as db:
-            res = db.execute(stmt).one_or_none()
-
-        if res:
-            user, token = res
-            t = TokenDTO.model_validate(token)
-            u = UserDTO.model_validate(user)
-            u.access_token = t
-            return u
-        else:
-            return None
+            res = db.execute(stmt).rowcount
+            db.flush()
+            if user.access_token:
+                self.update_user_access_token(user)
+            if self._autocommit:
+                db.commit()
+            return res > 0
 
     def update_user_access_token(self, user: UserDTO) -> int:
         """Creates/updates the one-to-one token row for the user.
@@ -81,6 +61,33 @@ class StepIngestorRepository:
             res = db.execute(stmt)
             db.commit()
             return res.rowcount == 1
+
+    def delete_user(self, user: UserDTO) -> int:
+        """Deletes the user and associated rows in other tables (cascade)."""
+        stmt = sa.delete(AppUser).where(AppUser.user_id == user.user_id)
+        with self._begin() as db:
+            res = db.execute(stmt)
+            db.commit()
+            return res.rowcount == 1
+
+    def get_user_by_id(self, user_id) -> UserDTO | None:
+        stmt = (
+            sa.select(AppUser, AccessToken)
+            .outerjoin(AccessToken, AppUser.user_id == AccessToken.user_id)
+            .where(AppUser.user_id == user_id)
+        )
+        with self._begin() as db:
+            row = db.execute(stmt).one_or_none()
+
+        if not row:
+            return None
+
+        user, token = row
+        u = UserDTO.model_validate(user)
+        if token:
+            u.access_token = TokenDTO.model_validate(token)
+        return u
+
 
     def get_access_token(self, user: UserDTO) -> UserDTO | None:
         with self._begin() as db:
