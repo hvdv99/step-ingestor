@@ -10,7 +10,7 @@ class Adapter:
     Source: Polar API interface
     Target: Repository"""
 
-    def __init__(self, adaptee, dto_dact, dto_step):
+    def __init__(self, dto_dact, dto_step, adaptee=None):
         self._adaptee = adaptee
         self._out_forms = {"dto_dact": dto_dact,
                            "dto_step": dto_step}

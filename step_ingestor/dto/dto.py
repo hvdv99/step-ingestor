@@ -9,13 +9,16 @@ class TokenDTO(BaseModel):
     issuer: str
     issued_at: dt.datetime
     expires_at: dt.datetime
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserDTO(BaseModel):
     user_id: str
+    polar_user_id: str
     access_token: TokenDTO | None = None
     created_at: dt.datetime
     updated_at: dt.datetime
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StepSampleDTO(BaseModel):
@@ -41,3 +44,13 @@ class ActivitySummaryDTO(BaseModel):
     inactivity_alert_count: int
     distance_from_steps: float
     model_config = ConfigDict(from_attributes=True)
+
+if __name__ == "__main__":
+    from datetime import datetime
+    import uuid
+    from zoneinfo import ZoneInfo
+    now = datetime.now(tz=ZoneInfo("Europe/Amsterdam"))
+    print([UserDTO(user_id=uuid.uuid4().hex,
+             polar_user_id=uid,
+             created_at=now,
+             updated_at=now).model_dump_json() for uid in ["123", "456", "789"]])

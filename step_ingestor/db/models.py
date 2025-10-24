@@ -14,6 +14,7 @@ class AppUser(Base):
     __tablename__ = "app_user"
 
     user_id:          Mapped[str] = mapped_column(String, primary_key=True)
+    polar_user_id:    Mapped[str] = mapped_column(String, nullable=False)
     created_at:       Mapped[dt.datetime] = mapped_column(TIMESTAMP(timezone=True),
                                                                  default=func.now(),
                                                                  nullable=False)
