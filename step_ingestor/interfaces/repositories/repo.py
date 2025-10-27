@@ -76,12 +76,20 @@ class StepIngestorRepository:
         self._maybe_commit()
         return (res.rowcount or 0) == 1
 
-    def get_user_by_id(self, polar_user_id) -> UserDTO | None:
-        stmt = (
-            sa.select(AppUser, AccessToken)
-            .outerjoin(AccessToken, AppUser.user_id == AccessToken.user_id)
-            .where(AppUser.polar_user_id == polar_user_id)
-        )
+    def get_user_by_id(self, user_id=None, polar_user_id=None) -> UserDTO | None:
+        if user_id:
+            stmt = (
+                sa.select(AppUser, AccessToken)
+                .outerjoin(AccessToken, AppUser.user_id == AccessToken.user_id)
+                .where(AppUser.user_id == user_id)
+            )
+
+        if polar_user_id:
+            stmt = (
+                sa.select(AppUser, AccessToken)
+                .outerjoin(AccessToken, AppUser.user_id == AccessToken.user_id)
+                .where(AppUser.polar_user_id == polar_user_id)
+            )
 
         row = self.session.execute(stmt).one_or_none()
         if not row:
