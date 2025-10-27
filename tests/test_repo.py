@@ -18,7 +18,7 @@ def test_repo_can_insert_user(user_index, test_users, test_session):
 @pytest.mark.parametrize("user_index", [0, 1, 2])
 def test_repo_can_retrieve_a_user_by_id(user_index, seeded_user, test_session):
     repo = StepIngestorRepository(session=test_session, autocommit=False)  # only flush
-    data = repo.get_user_by_id(user_id=seeded_user.user_id)
+    data = repo.get_user_by_id(polar_user_id=seeded_user.polar_user_id)
     assert data == seeded_user
 
 

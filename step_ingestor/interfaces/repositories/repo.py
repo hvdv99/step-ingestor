@@ -76,11 +76,11 @@ class StepIngestorRepository:
         self._maybe_commit()
         return (res.rowcount or 0) == 1
 
-    def get_user_by_id(self, user_id) -> UserDTO | None:
+    def get_user_by_id(self, polar_user_id) -> UserDTO | None:
         stmt = (
             sa.select(AppUser, AccessToken)
             .outerjoin(AccessToken, AppUser.user_id == AccessToken.user_id)
-            .where(AppUser.user_id == user_id)
+            .where(AppUser.polar_user_id == polar_user_id)
         )
 
         row = self.session.execute(stmt).one_or_none()
@@ -175,7 +175,6 @@ class StepIngestorRepository:
 
     def get_latest_summary_date(self, user: UserDTO) -> date_cls | None:
         """Return the most recent date stored in the daily summary table."""
-
         stmt = sa.select(sa.func.max(ActivitySummary.date)).where(
             ActivitySummary.user_id == user.user_id
         )
