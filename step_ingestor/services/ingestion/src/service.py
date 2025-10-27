@@ -15,27 +15,21 @@ class IngestionService:
         """Register the user in the database"""
         return self.repo.add_user(user)
 
-    def get_access_token(self, *, user):
+    def get_user(self, *, user_id=None, polar_user_id=None):
+        if user_id and polar_user_id:
+            raise ValueError
+        if user_id:
+            return self.repo.get_user_by_id(user_id=user_id)
+        return self.repo.get_user_by_id(polar_user_id=user_id)
+
+    def get_access_token(self, *, user: UserDTO):
         return self.repo.get_access_token(user)
 
     def update_access_token(self, *, user: UserDTO):
-        return self.repo.upsert_access_token(user)
+        return self.repo.update_user_access_token(user)
 
     def delete_user(self, *, user: UserDTO):
-        pass
-
-    def _populate_db_historical(self, user: UserDTO):
-        """Stores data from Polar API from last 365 days in DB."""
-        ranges = date_windows_28d()
-        for r in ranges:
-            date_from, date_to = r
-            logging.debug("Fetching range from {} to {}".format(date_from, date_to))
-            payload = self.provider.get_activity_date_range(date_from=date_from,
-                                                            date_to=date_to,
-                                                            user=user)
-            if payload:
-                self.repo.ingest_payload(payload=payload)
-        return True
+        return self.repo.delete_user(user)
 
     def refresh_user_data(self, *, user: UserDTO):
         # Get latest stored date
@@ -48,6 +42,7 @@ class IngestionService:
         # Get date after latest saved day
         next_date = latest_date + dt.timedelta(days=1)
         today = dt.date.today()
+        days_back = (today - next_date).days
 
         # When all available data has been saved already
         if next_date > today:
@@ -55,10 +50,20 @@ class IngestionService:
 
         # When there are other dates in the API and not in the DB
         else:
-            date_from, date_to = (next_date.isoformat(), today.isoformat())
-            date_range_data = self.provider.get_activity_date_range(date_from=date_from,
-                                                                    date_to=date_to,
-                                                                    user=user)
-            if date_range_data:
-                self.repo.ingest_payload(payload=date_range_data)
+            return self._populate_db_historical(user, days_back=days_back)
+
+    def _populate_db_historical(self, user: UserDTO, days_back=365):
+        """Stores data from Polar API from last 365 days in DB."""
+        ranges = date_windows_28d(days_back=days_back)
+        for r in ranges:
+            date_from, date_to = r
+            logging.debug("Fetching range from {} to {}".format(date_from, date_to))
+            payload = self.provider.get_activity_date_range(date_from=date_from,
+                                                            date_to=date_to,
+                                                            user=user)
+            if payload:
+                self.repo.ingest_payload(payload=payload)
         return True
+
+    def get_user_data(self, *, user):
+        return self.repo.get_user_data(user)

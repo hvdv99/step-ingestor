@@ -64,7 +64,6 @@ def polar_interface(mockserver):
     host = os.environ["MOCKSERVER_HOST"]
     port = mockserver
     api_url = f"http://{host}:{port}"
-    print(api_url)
     return AccessLink(
         api_url=api_url,
         auth_url=None,
