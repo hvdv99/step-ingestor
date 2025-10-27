@@ -1,4 +1,4 @@
-from .src.step_toolbox import UserStepPlotter
+from .src.service import UserStepPlotter
 
 __all__ = [
     "UserStepPlotter"

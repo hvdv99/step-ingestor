@@ -26,7 +26,7 @@ class Adapter:
 
     def get_activity_date_range(self, date_from, date_to, user: UserDTO) -> Sequence[ActivitySummaryDTO] | None:
         raw = self._adaptee.get_activity_date_range(date_from=date_from,
-                                                    to=date_to,
+                                                    date_to=date_to,
                                                     access_token=user.access_token.token,
                                                     steps=True)
         # Polar response is empty

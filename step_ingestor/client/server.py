@@ -3,31 +3,37 @@
 # 2) harden logout with POST/CSRF.
 
 import os
-import sys
-import logging
-
-from flask import render_template, request, g, abort
+from flask import render_template, g, abort
 from markupsafe import Markup
-from cryptography import fernet
 
-from step_ingestor.client.src.security.init_app import init_app
+from step_ingestor.client.src.service.service import session_factory
 from step_ingestor.client.src.routes.oauth import init_oauth_client, oauth_page
+from step_ingestor.client.src.security.init_app import init_app
 from step_ingestor.client.src.security.user import get_user_from_session
 from step_ingestor.client.src.security.decorators import login_required
+from step_ingestor.client.src.service.service import get_service
 
-from step_ingestor.services.ingestion import IngestionService
 from step_ingestor.services.analytics import UserStepPlotter
 
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-
 app = init_app()
-
 with app.app_context():
     init_oauth_client()
-    app.service = service = IngestionService(os.environ["POLAR_CLIENT_ID"],
-                                             os.environ["POLAR_CLIENT_SECRET"],
-                                             os.environ["POLAR_CALLBACK_URL"])
-    app.cipher = fernet.Fernet(app.secret_key.encode())
+
+
+@app.before_request
+def create_session():
+    """Adds a database session to the current request"""
+    g.db = session_factory()
+
+@app.teardown_request
+def shutdown_session(exception=None):
+    session = g.pop("db", None)
+    if session is not None:
+        if exception:
+            session.rollback()
+        else:
+            session.commit()
+        session.close()
 
 app.register_blueprint(oauth_page, urlprefix="/oauth")
 
@@ -43,44 +49,31 @@ def profile():
 @app.route("/dashboard/<freq>")
 @login_required
 def dashboard(freq):
+    user_id = get_user_from_session().get("user_id")
+    service = get_service()
+    user = service.get_user(user_id=user_id)
 
-    refresh_user_data()
-
-    freqs = {"hour": "h", "day": "d", "week": "W",
-             "month": "ME", "quarterly": "QE", "year": "YE"}
+    freqs = {"hour": "h",
+             "day": "d",
+             "week": "W",
+             "month": "ME",
+             "quarterly": "QE",
+             "year": "YE"}
 
     if freq not in freqs:
         abort(404)
     else:
         freq = freqs.pop(freq)
-
     g.freqs = freqs
 
-    # Fetch optional query params from request
-    from_ = request.args.get("from", None)
-    to = request.args.get("to", None)
-
     # Retrieve user data to make plot
-    user = get_user_from_session()
-    # TODO: This is authorization risk, use different key in database
-    user_data = app.service.repo.get_user_steps(user["user_id"]) # TODO: Abstraction for repo in service layer
+    user_data = service.get_user_data(user=user)
 
     # Create plot
     plotter = UserStepPlotter(user_data)
-    g.plot = Markup(plotter.create_plot(freq, from_, to))
+    g.plot = Markup(plotter.create_plot(freq))
 
     return render_template("dashboard.html")
-
-def refresh_user_data():
-    user = get_user_from_session()
-    if user:
-        user_id = user.get("user_id")
-        access_token_c = app.service.fetch_access_token(user_id)
-        access_token = app.cipher.decrypt(access_token_c.encode()).decode()
-        service.refresh_user_data(access_token, user_id)
-        return True
-    return False
-
 
 if __name__ == "__main__":
     app.run(

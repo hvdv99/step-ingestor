@@ -20,7 +20,7 @@ class IngestionService:
             raise ValueError
         if user_id:
             return self.repo.get_user_by_id(user_id=user_id)
-        return self.repo.get_user_by_id(polar_user_id=user_id)
+        return self.repo.get_user_by_id(polar_user_id=polar_user_id)
 
     def get_access_token(self, *, user: UserDTO):
         return self.repo.get_access_token(user)

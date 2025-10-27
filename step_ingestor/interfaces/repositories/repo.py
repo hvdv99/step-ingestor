@@ -31,12 +31,13 @@ class StepIngestorRepository:
         """Idempotent insert. Returns True if inserted, False if already existed."""
         stmt = (
             pg_insert(AppUser)
-            .values(user.model_dump(exclude={"access_token"}))
+            .values(user.model_dump(exclude={"access_token"}, by_alias=True))
             .on_conflict_do_nothing(index_elements=[AppUser.user_id])
         )
 
         res = self.session.execute(stmt)
         self._maybe_flush()
+        self._maybe_commit()
 
         if user.access_token:
             self.update_user_access_token(user)
@@ -52,7 +53,10 @@ class StepIngestorRepository:
         if not user.access_token:
             raise ValueError("No access token provided.")
 
-        stmt = pg_insert(AccessToken).values(user.access_token.model_dump())
+        data = user.access_token.model_dump(by_alias=True)
+        data["user_id"] = user.user_id
+
+        stmt = pg_insert(AccessToken).values(data)
         stmt = stmt.on_conflict_do_update(
             index_elements=[AccessToken.user_id],
             set_={
@@ -97,7 +101,7 @@ class StepIngestorRepository:
         user, token = row
         u = UserDTO.model_validate(user)
         if token:
-            u.access_token = TokenDTO.model_validate(token)
+            u.access_token = TokenDTO.model_validate(token, by_alias=True)
         return u
 
     def get_access_token(self, user: UserDTO) -> UserDTO | None:

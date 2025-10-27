@@ -1,11 +1,11 @@
-from .base import SessionFactory
+from .base import db_url
 from .models import AppUser, ActivitySummary, StepSample, AccessToken, Base
 
 __all__ = [
-    "SessionFactory",
     "AppUser",
     "ActivitySummary",
     "StepSample",
     "AccessToken",
-    "Base"
+    "Base",
+    "db_url"
 ]

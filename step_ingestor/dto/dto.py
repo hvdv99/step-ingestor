@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 class TokenDTO(BaseModel):
-    token: str
+    token: str = Field(alias="access_token")
     issuer: str
     issued_at: dt.datetime
     expires_at: dt.datetime

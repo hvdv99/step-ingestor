@@ -8,10 +8,10 @@ def init_app():
     app = Flask(__name__, template_folder="../../templates")
 
     app.config.update(
-        DEBUG=False,
+        DEBUG=True,
         SECRET_KEY=os.environ["FLASK_SECRET_KEY"],
-        SESSION_COOKIE_SECURE=True,    # Session cookies can only be sent over HTTPS
-        SESSION_COOKIE_HTTPONLY=True,  # Session cookies can only be read with HTML and not with JavaScript
+        SESSION_COOKIE_SECURE=False,    # Session cookies can only be sent over HTTPS
+        SESSION_COOKIE_HTTPONLY=False,  # Session cookies can only be read with HTML and not with JavaScript
         SESSION_COOKIE_SAMESITE="Lax", # How cookies are send with requests from external sites
         MAX_CONTENT_LENGTH=16 * 1024 * 1024,
         PERMANENT_SESSION_LIFETIME=timedelta(hours=2) # Session expires after 2 hours
