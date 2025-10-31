@@ -37,4 +37,4 @@ jobs:
       - name: Push image to Docker Hub
         run: |
           docker login -u hvdv99 -p ${{ secrets.DOCKER_HUB_TOKEN }}
-          docker push hvdv99/hello-gh-actions:latest
+          docker push hvdv99/step-ingestor:latest
