@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date as date_cls
+import datetime as dt
 from typing import Sequence
 
 import sqlalchemy as sa
@@ -121,7 +121,15 @@ class StepIngestorRepository:
         for s in self.session.execute(stmt_summary).scalars():
             dto = ActivitySummaryDTO.model_validate(s)
 
-            stmt_steps = sa.select(StepSample).where(StepSample.timestamp == dto.date)
+            t_start = dt.datetime.combine(dto.date, dt.time.min)
+            t_end = t_start + dt.timedelta(days=1)
+
+            stmt_steps = sa.select(StepSample).where(
+                StepSample.user_id == dto.user_id,
+                StepSample.timestamp >= t_start,
+                StepSample.timestamp < t_end
+            )
+
             steps = self.session.execute(stmt_steps).scalars().all()
             adapter = TypeAdapter(list[StepSampleDTO])
             samples = adapter.validate_python(steps)
@@ -185,7 +193,7 @@ class StepIngestorRepository:
         self._maybe_commit()
         return 0 if result.rowcount in (None, -1) else result.rowcount
 
-    def get_latest_summary_date(self, user: UserDTO) -> date_cls | None:
+    def get_latest_summary_date(self, user: UserDTO) -> dt.date | None:
         """Return the most recent date stored in the daily summary table."""
         stmt = sa.select(sa.func.max(ActivitySummary.date)).where(
             ActivitySummary.user_id == user.user_id
