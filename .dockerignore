@@ -4,6 +4,7 @@
 compose.yaml
 compose.old.yaml
 .gitignore
+.github
 nginx.conf
 setup_nginx.sh
 README.md

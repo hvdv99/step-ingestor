@@ -1,0 +1,16 @@
+Flask==3.1.2
+gunicorn==23.0.0
+SQLAlchemy==2.0.43
+psycopg2==2.9.10
+plotly==6.3.0
+pandas==2.3.2
+pydantic==2.11.9
+pyyaml==6.0.3
+Authlib==1.6.5
+python-dotenv==1.1.1
+pytest==8.4.2
+fastapi==0.119.0
+isodate==0.7.2
+sqlalchemy-timescaledb==0.4.1
+testcontainers==4.13.2
+ruff

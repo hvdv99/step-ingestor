@@ -1,0 +1,42 @@
+name: Test Code, Publish Docker Image # Workflow name
+
+on: # Trigger
+  push:
+    branches:
+      - main
+#    paths:
+#      - './Dockerfile'
+
+jobs:
+  test_code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch repository
+        uses: actions/checkout@v5
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+      - name: Check code formatting
+        run: ruff check --output-format=github
+      - name: Write .env from single secret
+        run: |
+          printf '%s' '${{ secrets.DOT_ENV_FILE }}' > .env
+      - name: Test with pytest
+        run: pytest
+  publish:
+    needs: [test_code]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch repository
+        uses: actions/checkout@v5
+      - name: Build Image
+        run: |
+          docker build ./ -t hvdv99/step-ingestor:latest
+      - name: Push image to Docker Hub
+        run: |
+          docker login -u hvdv99 -p ${{ secrets.DOCKER_HUB_TOKEN }}
+          docker push hvdv99/hello-gh-actions:latest
