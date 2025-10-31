@@ -72,4 +72,3 @@ class SampleMocker:
             dt_new += s_offset
             s["timestamp"] = isodate.datetime_isoformat(dt_new)
         return samples
-

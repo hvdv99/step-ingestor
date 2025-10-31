@@ -1,7 +1,3 @@
-# TODO:
-# 1) refactor session handling so secrets never leave the server,
-# 2) harden logout with POST/CSRF.
-
 import os
 from flask import render_template, g, abort
 from markupsafe import Markup
@@ -12,7 +8,6 @@ from step_ingestor.client.src.security.init_app import init_app
 from step_ingestor.client.src.security.user import get_user_from_session
 from step_ingestor.client.src.security.decorators import login_required
 from step_ingestor.client.src.service.service import get_service
-
 from step_ingestor.services.analytics import UserStepPlotter
 
 app = init_app()

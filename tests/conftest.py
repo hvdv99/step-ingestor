@@ -206,6 +206,4 @@ def seed_user_data(user_activity_dto, test_session):
         db.execute(stmt_act)
         db.execute(stmt_steps)
         db.commit()
-    yield
-
-    # Cleanup not required because of cascasde
+    yield  # Cleanup not required because of cascasde in `seeded_user`
