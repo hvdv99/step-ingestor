@@ -43,6 +43,7 @@ class StepIngestorRepository:
             self.update_user_access_token(user)
 
         self._maybe_commit()
+
         # rowcount can be 0 if no insert happened due to conflict
         return (res.rowcount or 0) > 0
 
@@ -88,12 +89,14 @@ class StepIngestorRepository:
                 .where(AppUser.user_id == user_id)
             )
 
-        if polar_user_id:
+        elif polar_user_id:
             stmt = (
                 sa.select(AppUser, AccessToken)
                 .outerjoin(AccessToken, AppUser.user_id == AccessToken.user_id)
                 .where(AppUser.polar_user_id == polar_user_id)
             )
+        else:
+            raise ValueError("No user ID provided")
 
         row = self.session.execute(stmt).one_or_none()
         if not row:

@@ -10,5 +10,4 @@ def test_range_short():
     today = dt.date.fromisoformat("2025-10-01")
     days_back = (today - last_saved).days
     ranges = date_windows_28d(today=today, days_back=days_back)
-    print(ranges)
     assert len(ranges) == 4
