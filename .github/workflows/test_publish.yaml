@@ -4,8 +4,6 @@ on: # Trigger
   push:
     branches:
       - main
-#    paths:
-#      - './Dockerfile'
 
 jobs:
   test_code:
@@ -20,8 +18,8 @@ jobs:
           cache: "pip"
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-#      - name: Check code formatting
-#        run: ruff check --output-format=github
+      - name: Check code formatting
+        run: ruff check --output-format=github
       - name: Write .env from single secret
         run: |
           printf '%s' '${{ secrets.DOT_ENV_FILE }}' > .env

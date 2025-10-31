@@ -1,7 +1,3 @@
-from dotenv import load_dotenv
-
-load_dotenv('.env')
-
 import os
 import json
 import random
@@ -11,6 +7,7 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer
@@ -19,9 +16,12 @@ from testcontainers.core.image import DockerImage
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
 from step_ingestor.db import Base, AppUser, ActivitySummary, StepSample
-from step_ingestor.interfaces import AccessLink, StepIngestorRepository
+from step_ingestor.interfaces import AccessLink
 from step_ingestor.dto import ActivitySummaryDTO, StepSampleDTO, UserDTO
 from step_ingestor.adapters import Adapter
+
+
+load_dotenv('.env')
 
 
 # --- Helpers ---

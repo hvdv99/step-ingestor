@@ -30,7 +30,9 @@ class DailyActivityBeta(Resource):
                 continue
             params[key] = str(value).lower() if isinstance(value, bool) else value
 
-        if date is None: date = ''
+        if date is None:
+            date = ''
+
         response = self._get(endpoint="/users/activities/{date}".format(date=date),
                          access_token=access_token,
                          params=params if params else None)

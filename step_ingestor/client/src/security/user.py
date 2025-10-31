@@ -15,6 +15,6 @@ def clear_user_session():
     session.pop(__session_user_key, None)
 
 def get_user_from_session() -> Optional[User]:
-    if not __session_user_key in session:
+    if __session_user_key not in session:
         return None
     return session[__session_user_key]

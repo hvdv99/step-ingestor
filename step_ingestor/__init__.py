@@ -1,7 +1,3 @@
-from .adapters import *
-from .dto import *
-from .interfaces import *
-from .services import *
-from .client import app
+from dotenv import load_dotenv
 
-
+load_dotenv(".env")

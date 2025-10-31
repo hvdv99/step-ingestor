@@ -1,5 +1,5 @@
 import datetime as dt
-from .samplemocker import SampleMocker
+from .mocker import SampleMocker as SampleMocker
 
 
 # Helpers
