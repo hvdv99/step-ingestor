@@ -209,9 +209,7 @@ __marimo__/
 compose.yaml
 archive/
 *dbdata*
-*/db/db_migrations
 *.DS_Store
-docs/
 *alembic*
 *flows.MD
 *.pem
